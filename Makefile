@@ -17,11 +17,11 @@
 #
 
 ifdef DEV
-OWRT_GIT = https://github.com/gdaneels/backfire-omf.git
-OWRT_PKG_GIT = https://github.com/gdaneels/backfire-packages.git
+OWRT_GIT = https://github.com/confine-omf/backfire-omf.git
+OWRT_PKG_GIT = https://github.com/confine-omf/backfire-packages.git
 else
-OWRT_GIT = https://github.com/gdaneels/backfire-omf.git
-OWRT_PKG_GIT = https://github.com/gdaneels/backfire-packages.git
+OWRT_GIT = https://github.com/confine-omf/backfire-omf.git
+OWRT_PKG_GIT = https://github.com/confine-omf/backfire-packages.git
 endif
 
 TIMESTAMP = $(shell date +%d%m%y_%H%M)
