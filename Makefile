@@ -116,7 +116,7 @@ define nightly_build
 	mkdir -p "$(NIGHTLY_IMAGES_DIR)"
 	cp -f "$(BUILD_DIR)/bin/x86/$(TARGET)-rootfs.tar.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-$(CONFINE_VERSION)-$(BUILD_ID)-rootfs.tar.gz"
 	
-	ln -fs  "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-$(CONFINE_VERSION)-$(BUILD_ID)-rootfs.tar.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-rootfs-latest.tar.gz"
+	ln -fs  "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-$(CONFINE_VERSION)-$(BUILD_ID)-rootfs.tar.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-$(CONFINE_VERSION)-rootfs-latest.tar.gz"
     #cp -f "$(BUILD_DIR)/bin/x86/$(IMAGE)-$(IMAGE_TYPE).img.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-trunk-$(CONFINE_VERSION)-$(BUILD_ID)-$(IMAGE_TYPE).img.gz"
 endef
 
