@@ -113,9 +113,9 @@ define nightly_build
 	@echo $(BUILD_ID)
 	
 	mkdir -p "$(NIGHTLY_IMAGES_DIR)"
-	cp -f "$(BUILD_DIR)/bin/x86/$(TARGET)-rootfs.tar.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-backfire-$(CONFINE_VERSION)-$(BUILD_ID)-rootfs-$(IMAGE_TYPE).tar.gz"
+	cp -f "$(BUILD_DIR)/bin/x86/$(TARGET)-rootfs.tar.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-$(CONFINE_VERSION)-$(BUILD_ID)-rootfs.tar.gz"
 	
-	ln -fs  "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-backfire-$(CONFINE_VERSION)-$(BUILD_ID)-rootfs-$(IMAGE_TYPE).tar.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-backfire-rootfs-latest-$(IMAGE_TYPE).tar.gz"
+	ln -fs  "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-$(CONFINE_VERSION)-$(BUILD_ID)-rootfs.tar.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-$(CONFINE_VERSION)-$(IMAGE_TYPE)-rootfs-latest.tar.gz"
     #cp -f "$(BUILD_DIR)/bin/x86/$(IMAGE)-$(IMAGE_TYPE).img.gz" "$(NIGHTLY_IMAGES_DIR)/omf-openwrt-trunk-$(CONFINE_VERSION)-$(BUILD_ID)-$(IMAGE_TYPE).img.gz"
 endef
 
