@@ -18,11 +18,9 @@
 
 ifdef DEV
 OWRT_GIT = gitosis@git.confine-project.eu:confine/openwrt.git
-# OWRT_GIT = git://github.com/confine-omf/openwrt.git
 OWRT_PKG_GIT = gitosis@git.confine-project.eu:confine/packages.git
 else
 OWRT_GIT = http://git.confine-project.eu/confine/openwrt.git
-# OWRT_GIT = git://github.com/confine-omf/openwrt.git
 OWRT_PKG_GIT = http://git.confine-project.eu/confine/packages.git
 endif
 
