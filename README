@@ -1,0 +1,70 @@
+** Current options are:
+
+- make all
+Execute all needed to have the CONFINE image.
+
+- make target
+Checks out a specific branch (master or testing) or tag (tags/v0.1, etc.) from each project (confine-dist, openwrt and packages) and compiles a CONFINE image for that target. The branch/tag is specified by the environment variable CONFINE_VERSION (testing by default). 
+To compile tag v0.1 just do:
+make target CONFINE_VERSION=tags/v0.1
+
+- make prepare
+Prepare the download dir if not existing and point the feeds.conf file to the proper place.
+ 
+- make menuconfig
+Provides a ncurses menuconfig from OpenWRT and copy the .config file inside my_configs/
+
+- make kernel_menuconfig
+Provides a ncurses menuconfig from the linux kernel and copy the .config file inside my_configs/
+
+- make sync
+Syncronize current files/configs directories with openwrt build tree. Needed when you update confie-dist code (git pull).
+
+- make clean
+Removes from $(BUILD_DIR) bin/ and build_dir/ directories
+
+- make dirclean
+Removes from $(BUILD_DIR) bin/, build_dir/, staging_dir/ and toolchain/ directories
+
+- make distclean
+Removes everything you have compiled and configured -- leaves $(BUILD_DIR) like after a clean checkout
+
+- make mrproper
+Removes everything leaving just the original files
+
+** Variables:
+
+J = number of process for compilation time
+V = verbosity level
+
+For instance: make all V=99 J=4
+
+** Directories
+
+- files/
+All files you put inside this directory will be copyied to openwrt root filesystem
+
+- packages/
+All packages here will be copyied inside package/ openwrt directory. If you add a new package, remember to do "menuconfig" to select it
+
+- configs/
+In the first checkout this configs will be copyied to OpenWRT source tree (owrt_config & kernel_config)
+
+- my_configs/
+When you execute a menuconfig or kernel_menuconfig, the new config files will be copyied here. So if you want to commit the changes just copy them to configs/ dir
+ 
+- images/
+Output image directory
+
+- openwrt/
+OpenWRT source tree
+
+** Output image:
+
+When compilation finishes, you will find the output images inside images/ directory
+
+If you need other kind of images (VMware, VBOX and so on) check inside src/bin/x86/ directory
+
+To copy it in a compact flash or usb stick: dd if=images/IMAGE_FILE of=/dev/sdX
+
+

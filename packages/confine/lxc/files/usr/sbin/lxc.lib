@@ -1,0 +1,606 @@
+#!/bin/bash
+
+
+set -u
+
+
+
+
+
+LXC_IMAGES_LINK='/var/lib/lxc'
+
+LXC_SL_ID_MIN=1
+LXC_SL_ID_MAX=253
+LXC_VNET_PREFIX=lxc
+
+UCI_DEFAULT_PATH=/etc/config
+ERR_LOG_TAG='LXC'
+
+
+. /usr/sbin/lxc.functions
+
+
+
+lxc_check() {
+
+    uci_check_clean lxc
+    uci_check_clean network
+
+    LXC_IMAGES_PATH=$( uci_get lxc.general.lxc_images_path )
+    LXC_TEMPLATES_PATH=$( uci_get lxc.general.lxc_templates_path )
+    LXC_SCRIPTS_PATH=$( uci_get lxc.general.lxc_scripts_path )
+
+    [ -d $LXC_IMAGES_PATH ]    || err $FUNCNAME ""
+    [ -d $LXC_TEMPLATES_PATH ] || err $FUNCNAME ""
+    [ -d $LXC_SCRIPTS_PATH ]   || err $FUNCNAME ""
+    [ -d /usr/lib/lxc/rootfs ] || err $FUNCNAME ""  # lxc-bug workarount: required for lxc to start container
+
+    if ! [ -d $LXC_IMAGES_LINK ]; then
+	mkdir -p $LXC_IMAGES_LINK; rmdir $LXC_IMAGES_LINK # make sure the mother dir does exist
+	ln -s $LXC_IMAGES_PATH $LXC_IMAGES_LINK || err $FUNCNAME ""
+    fi
+
+    [ -d /cgroup  ] || err $FUNCNAME ""
+    mount | grep -e "cgroup" > /dev/null || mount -t cgroup -o cpu,cpuacct,cpuset,memory,devices cgroup /cgroup || err $FUNCNAME ""
+}
+
+
+lxc_name() {
+    local SL_NAME="$1"
+    local SL_ID_HEX=${SL_NAME:0:2}
+
+    echo $SL_NAME | grep -e " " -e "-" -e ":" >/dev/null && \
+	err $FUNCNAME "Container name must NOT contain ' ', '-', ':'"
+
+    echo $SL_ID_HEX | grep -e "^[0-9,a-f][0-9,a-f]$" >/dev/null || \
+	err $FUNCNAME "Container name must start with unique 2-digit hex value"
+    
+    local SL_ID_DEC=$(( 16#${SL_ID_HEX} ))
+
+    [ $SL_ID_DEC -ge $LXC_SL_ID_MIN ] && [ $SL_ID_DEC -le $LXC_SL_ID_MAX ] || \
+	err $FUNCNAME "Container id must be >= $LXC_SL_ID_MIN and <= $LXC_SL_ID_MAX"
+
+    echo "$SL_NAME"
+}
+
+
+lxc_remove() {
+    local SL_NAME=$( lxc_name "$1" )
+
+    lxc_check
+
+    lxc-info -n $SL_NAME 2>/dev/null | grep -e "^state:" | grep -e "RUNNING" >/dev/null && \
+	err $FUNCNAME "Container $SL_NAME still running"
+    
+    [ -d $LXC_IMAGES_PATH/$SL_NAME ] && rm -rf $LXC_IMAGES_PATH/$SL_NAME
+}
+
+lxc_purge() {
+    local SL_NAME=$( lxc_name "$1" )
+
+    lxc_check
+
+    
+
+    lxc-info -n $SL_NAME 2>/dev/null | grep -e "^state:" | grep -e "RUNNING" >/dev/null && \
+	err $FUNCNAME "Container $SL_NAME still running"
+
+    lxc_remove $SL_NAME
+
+    uci_test lxc.$SL_NAME soft,quiet && uci_del lxc.$SL_NAME
+
+}
+
+
+lxc_create_uci() {
+
+    local SL_NAME=$( lxc_name "$1" )
+    local SL_CONFIG=$2
+    local SL_ID_HEX=${SL_NAME:0:2}
+    local SL_ID_DEC=$(( 16#${SL_ID_HEX} ))
+
+    lxc_check
+
+    [ "lxc.$SL_NAME" != "$SL_CONFIG" ] || \
+	err $FUNCNAME "name=$SL_NAME must be different from template=$SL_CONFIG"
+
+    uci_test lxc.$SL_NAME soft,quiet && \
+	err $FUNCNAME "config=$SL_CONFIG defined but lxc.$SL_NAME already exists"
+
+    [ "$( uci_get $SL_CONFIG soft,quiet )" = "container" ] || \
+	err $FUNCNAME "Missing config $SL_CONFIG=container"
+
+    uci_show lxc | grep -e "=container$" | awk -F'lxc.' '{print $2}' | awk -F'=' '{print $1}' | \
+	grep -e "^$SL_ID_HEX" > /dev/null && \
+	err $FUNCNAME "Container config section=$SL_ID_HEX already exist!"
+
+    uci_show lxc | grep -e ".container_id=$" | awk -F'=' '{print $1}' | \
+	grep -e "^$SL_ID_HEX" > /dev/null && \
+	err $FUNCNAME "Container config with container_id=$SL_ID_HEX already exist!"
+
+
+
+    local SL_DROP="$(    uci_get $SL_CONFIG.cap_drop   soft,quiet)"
+    local FS_URL="$(     uci_get $SL_CONFIG.rootfs_url soft,quiet)"
+    local SL_MKDIR="$(   uci_get $SL_CONFIG.mkdir      soft,quiet)"
+    local SL_REMOUNT="$( uci_get $SL_CONFIG.remount    soft,quiet)"
+    local SL_COPY="$(    uci_get $SL_CONFIG.copy       soft,quiet)"
+    local SL_CUSTOM="$(  uci_get $SL_CONFIG.customize  soft,quiet)"
+    local SL_MKNOD="$(   uci_get $SL_CONFIG.mknod      soft,quiet)"
+
+    uci_set lxc.$SL_NAME=container
+    uci_set lxc.$SL_NAME.container_id=$SL_ID_HEX
+    uci_set lxc.$SL_NAME.auto_boot="$( uci_get $SL_CONFIG.auto_boot soft || echo 0 )"
+    uci_set lxc.$SL_NAME.auto_create="$( uci_get $SL_CONFIG.auto_create soft || echo 0 )"
+
+    [ "$SL_DROP" ]    && uci_set lxc.$SL_NAME.cap_drop="$SL_DROP"
+    [ "$FS_URL" ]     && uci_set lxc.$SL_NAME.rootfs_url="$FS_URL"
+    [ "$SL_MKDIR" ]   && uci_set lxc.$SL_NAME.mkdir="$SL_MKDIR"
+    [ "$SL_REMOUNT" ] && uci_set lxc.$SL_NAME.remount="$SL_REMOUNT"
+    [ "$SL_COPY" ]    && uci_set lxc.$SL_NAME.copy="$SL_COPY"
+    [ "$SL_CUSTOM" ]  && uci_set lxc.$SL_NAME.customize="$SL_CUSTOM"
+    [ "$SL_MKNOD" ]   && uci_set lxc.$SL_NAME.mknod="$SL_MKNOD"
+
+    local MAC_PREFIX32="$( uci_get lxc.general.lxc_mac_prefix32 )"
+    local IF_KEYS="$( uci_get lxc.general.lxc_if_keys )"
+
+    local IF_KEY=
+    for IF_KEY in $IF_KEYS; do
+	
+	local IF_TYPE="$( uci_get $SL_CONFIG.if${IF_KEY}_type soft,quiet 2>/dev/null )"
+
+	if [ $IF_TYPE ]; then
+
+	    local IF_NAME="$(       uci_get $SL_CONFIG.if${IF_KEY}_name    soft,quiet 2>/dev/null )"
+	    local IF_NETCONF="$(    uci_get $SL_CONFIG.if${IF_KEY}_netconf soft,quiet 2>/dev/null )"
+	    local IF_VLANPHY="$(    uci_get $SL_CONFIG.if${IF_KEY}_vlanphy soft,quiet 2>/dev/null )"
+
+	    local IF_IPV4_PROTO="$( uci_get $SL_CONFIG.if${IF_KEY}_ipv4_proto soft,quiet 2>/dev/null )"
+	    local IF_IPV4="$(       uci_get $SL_CONFIG.if${IF_KEY}_ipv4 soft,quiet 2>/dev/null )"
+	    local IF_IPV6_PROTO="$( uci_get $SL_CONFIG.if${IF_KEY}_ipv6_proto soft,quiet 2>/dev/null )"
+	    local IF_IPV6="$(       uci_get $SL_CONFIG.if${IF_KEY}_ipv6 soft,quiet 2>/dev/null )"
+
+	    local IF_MAC=${MAC_PREFIX32}:${SL_ID_HEX}:${IF_KEY}
+	    local IF_PAIR=${LXC_VNET_PREFIX}-${SL_ID_HEX}-${IF_KEY}
+	    local IF_VLANTAG=F${SL_ID_HEX}
+
+	    uci_set lxc.$SL_NAME.if${IF_KEY}_type=$IF_TYPE
+
+	    [ ${IF_NAME:-} ]       && uci_set lxc.$SL_NAME.if${IF_KEY}_name=$IF_NAME
+	    [ ${IF_IPV4_PROTO:-} ] && uci_set lxc.$SL_NAME.if${IF_KEY}_ipv4_proto=$IF_IPV4_PROTO
+	    [ ${IF_IPV4:-} ]       && uci_set lxc.$SL_NAME.if${IF_KEY}_ipv4=$IF_IPV4
+	    [ ${IF_IPV6_PROTO:-} ] && uci_set lxc.$SL_NAME.if${IF_KEY}_ipv6_proto=$IF_IPV6_PROTO
+	    [ ${IF_IPV6:-} ]       && uci_set lxc.$SL_NAME.if${IF_KEY}_ipv6=$IF_IPV6
+	    [ ${IF_NETCONF:-} ]    && uci_set lxc.$SL_NAME.if${IF_KEY}_netconf=$IF_NETCONF
+	    [ ${IF_VLANPHY:-} ]    && uci_set lxc.$SL_NAME.if${IF_KEY}_vlanphy=$IF_VLANPHY
+	    [ ${IF_VLANPHY:-} ]    && uci_set lxc.$SL_NAME.if${IF_KEY}_vlantag=$IF_VLANTAG
+
+	    uci_set lxc.$SL_NAME.if${IF_KEY}_mac=$IF_MAC
+	    uci_set lxc.$SL_NAME.if${IF_KEY}_pair=$IF_PAIR
+
+	fi
+	    
+    done
+
+
+
+}
+
+lxc_create() {
+    local SL_NAME=$( lxc_name "$1" )
+    local SL_CONFIG=$2
+    local SL_ID_HEX=${SL_NAME:0:2}
+    local SL_ID_DEC=$(( 16#${SL_ID_HEX} ))
+
+
+    lxc_check
+
+    uci_test $SL_CONFIG  soft,quiet || \
+	err $FUNCNAME "uci config $SL_CONFIG does not exists"
+
+    [ -f $LXC_IMAGES_PATH/$SL_NAME/config ] && \
+	err $FUNCNAME "$LXC_IMAGES_PATH/$SL_NAME/config already exist"
+
+    
+    echo creating container $SL_NAME using config=$SL_CONFIG >&2
+
+
+    [ "lxc.$SL_NAME" != "$SL_CONFIG" ] &&  ! uci_test lxc.$SL_NAME soft,quiet && \
+	lxc_create_uci $SL_NAME $SL_CONFIG
+
+    mkdir -p $LXC_IMAGES_PATH/$SL_NAME/rootfs
+
+
+    cat <<EOF > $LXC_IMAGES_PATH/$SL_NAME/config
+lxc.utsname = $SL_NAME
+lxc.tty = 4
+lxc.pts = 1024
+
+EOF
+
+    
+    local SL_DROP="$( uci_get lxc.$SL_NAME.cap_drop soft )"
+    if [ "$SL_DROP" ]; then
+	local DROP=
+	for DROP in $SL_DROP; do
+	    cat <<EOF >> $LXC_IMAGES_PATH/$SL_NAME/config
+lxc.cap.drop = $DROP
+EOF
+	done
+    fi
+
+
+    local FS_URL="$( uci_get lxc.$SL_NAME.rootfs_url soft,quiet )"
+    if [ "$FS_URL" ]; then
+
+	local FS_COMP=$( ( echo $FS_URL | grep -e "\.tgz$" >/dev/null && echo "tgz" ) ||\
+                         ( echo $FS_URL | grep -e "\.tar\.gz$" >/dev/null && echo "tar.gz" ) ||\
+                         ( echo $FS_URL | grep -e "\.gz$" >/dev/null && echo ".gz" ) )
+
+	local FS_NAME=$(echo $FS_URL | awk -F'/' '{print $(NF)}' | awk -F'.' '{print $1}')
+	local FS_SITE=$(echo $FS_URL | awk -F ${FS_NAME}.${FS_COMP} '{print $1}')
+
+	[ "$FS_URL" = "${FS_SITE}${FS_NAME}.${FS_COMP}" ] ||\
+                   err $FUNCNAME "Invalid $FS_URL != ${FS_SITE}${FS_NAME}.${FS_COMP}"
+
+	install_url $FS_URL $FS_SITE $FS_NAME $FS_COMP $LXC_TEMPLATES_PATH $LXC_IMAGES_PATH/$SL_NAME/rootfs install
+    fi
+
+
+    local SL_MKDIR="$( uci_get lxc.$SL_NAME.mkdir soft,quiet )"
+    if [ "$SL_MKDIR" ]; then
+	local MKDIR=
+
+	for MKDIR in $SL_MKDIR; do
+	    local DIR="$(echo $MKDIR | awk -F':' '{print $1}')"
+	    local MOD="$(echo $MKDIR | awk -F':' '{print $2}')"
+	    MOD=$( [ $MOD ] && echo $MOD || echo 755 )
+	    mkdir -m $MOD -p $LXC_IMAGES_PATH/$SL_NAME/rootfs/$DIR
+	done
+    fi
+
+
+
+    cat <<EOF >> $LXC_IMAGES_PATH/$SL_NAME/config
+
+lxc.rootfs = $LXC_IMAGES_PATH/$SL_NAME/rootfs
+lxc.mount.entry = proc     $LXC_IMAGES_PATH/$SL_NAME/rootfs/proc       proc   nodev,noexec,nosuid 0 0
+lxc.mount.entry = syfs     $LXC_IMAGES_PATH/$SL_NAME/rootfs/sys        sysfs  defaults 0 0
+# lxc.mount.entry=/selinux $LXC_IMAGES_PATH/$SL_NAME/rootfs/selinux    bind bind 0 0
+lxc.mount.entry = devpts   $LXC_IMAGES_PATH/$SL_NAME/rootfs/dev/pts    devpts defaults 0 0
+lxc.mount.entry = tmpfs    $LXC_IMAGES_PATH/$SL_NAME/rootfs/dev/shm    tmpfs  defaults 0 0
+EOF
+
+
+    local SL_REMOUNT="$( uci_get lxc.$SL_NAME.remount soft,quiet )"
+    if [ "$SL_REMOUNT" ]; then
+	local REMOUNT=
+	for REMOUNT in $SL_REMOUNT; do
+	    mkdir -p $LXC_IMAGES_PATH/$SL_NAME/rootfs/$REMOUNT
+
+	    cat <<EOF >> $LXC_IMAGES_PATH/$SL_NAME/config
+lxc.mount.entry = /$REMOUNT  $LXC_IMAGES_PATH/$SL_NAME/rootfs/$REMOUNT   none ro,bind 0 0
+EOF
+	done
+    fi
+
+
+
+    local SL_COPY="$( uci_get lxc.$SL_NAME.copy soft,quiet )"
+    if [ "$SL_COPY" ]; then
+	local COPY=
+	for COPY in $SL_COPY; do
+	    if ! echo "$COPY" | grep -e "^!" >/dev/null; then
+		cp -ar /$COPY $LXC_IMAGES_PATH/$SL_NAME/rootfs/$COPY
+	    fi
+	done
+
+	for COPY in $SL_COPY; do
+	    if echo "$COPY" | grep -e "^!" >/dev/null; then
+		rm -rf $LXC_IMAGES_PATH/$SL_NAME/rootfs/${COPY:1}
+	    fi
+	done
+    fi
+
+
+
+    local SL_CUSTOM="$( uci_get lxc.$SL_NAME.customize soft,quiet )"
+    if [ "$SL_CUSTOM" ]; then
+	local CUSTOM=
+	for CUSTOM in $SL_CUSTOM; do
+
+	    [ -f $LXC_SCRIPTS_PATH/$CUSTOM ] && [ -x $LXC_SCRIPTS_PATH/$CUSTOM ] || \
+		err $FUNCNAME "Invalid customization script $LXC_SCRIPTS_PATH/$CUSTOM"
+
+	    if [ -e $LXC_IMAGES_PATH/$SL_NAME/rootfs ]; then
+		customize_rootfs() { err $FUNCNAME "NOT defined"; }
+		. $LXC_SCRIPTS_PATH/$CUSTOM 
+		customize_rootfs $SL_NAME
+	    fi
+
+	done
+    fi
+
+
+
+    cat <<EOF >> $LXC_IMAGES_PATH/$SL_NAME/config
+
+lxc.cgroup.devices.deny = a
+EOF
+
+
+
+    local SL_MKNOD="$( uci_get lxc.$SL_NAME.mknod soft,quiet )"
+    if [ "$SL_MKNOD" ]; then
+	local MKNOD=
+	for MKNOD in $SL_MKNOD; do
+
+	    [ "$((`echo $MKNOD | sed 's/[^:]//g'|wc -m`-1))" = 5 ] || \
+		{ lxc_remove $SL_NAME; err $FUNCNAME "Illegal format $MKNOD in lxc.$SL_NAME.mknod"; }
+
+	    if [ "$(echo $MKNOD | awk -F':' '{print $6}')" ]; then
+		cat <<EOF >> $LXC_IMAGES_PATH/$SL_NAME/config
+lxc.cgroup.devices.allow = $( echo $MKNOD | awk -F':' '{print $3 " " $4 ":" $5 " " $6}' )
+EOF
+	    fi
+
+	    if [ "$(echo $MKNOD | awk -F':' '{print $1}')" ]; then
+		mkdir -p $LXC_IMAGES_PATH/$SL_NAME/rootfs/dev
+		mknod -m $(echo $MKNOD | awk -F':' '{print $2}') \
+		    $LXC_IMAGES_PATH/$SL_NAME/rootfs/dev/$(echo $MKNOD | awk -F':' '{print $1}') \
+		    $(echo $MKNOD | awk -F':' '{print $3 " " $4 " " $5 }')
+	    fi
+	done
+    fi
+
+
+
+    local IF_KEYS="$( uci_get lxc.general.lxc_if_keys )"
+
+    local IF_KEY=
+    for IF_KEY in $IF_KEYS; do
+	
+	local IF_TYPE=$( uci_get lxc.$SL_NAME.if${IF_KEY}_type soft,quiet 2>/dev/null )
+
+	if [ $IF_TYPE ]; then
+
+	    local IF_NAME=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_name    soft,quiet 2>/dev/null )
+	    local IF_MAC=$(     uci_get lxc.$SL_NAME.if${IF_KEY}_mac     soft 2>/dev/null )
+	    local IF_PAIR=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_pair    soft 2>/dev/null )
+	    local IF_VLANPHY=$( uci_get lxc.$SL_NAME.if${IF_KEY}_vlanphy soft,quiet 2>/dev/null )
+	    local IF_VLANTAG=$( uci_get lxc.$SL_NAME.if${IF_KEY}_vlantag soft,quiet 2>/dev/null )
+	    local IF_IPV4=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_ipv4    soft,quiet 2>/dev/null )
+	    local IF_IPV6=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_ipv6    soft,quiet 2>/dev/null )
+
+	    if [ "$IF_TYPE" = "veth" ]; then
+		cat <<EOF >> $LXC_IMAGES_PATH/$SL_NAME/config
+
+lxc.network.type      = veth
+lxc.network.flags     = up
+lxc.network.name      = $IF_NAME
+lxc.network.hwaddr    = $IF_MAC
+lxc.network.veth.pair = $IF_PAIR
+$( [ "$IF_IPV4" ] && echo "lxc.network.ipv4      = $IF_IPV4" )
+$( [ "$IF_IPV6" ] && echo "lxc.network.ipv6      = $IF_IPV6" )
+
+EOF
+	    fi
+
+	    if [ "$IF_TYPE" = "vlan" ] && [ ${IF_VLANPHY:-} ] && [ ${IF_VLANTAG:-} ]; then
+		cat <<EOF >> $LXC_IMAGES_PATH/$SL_NAME/config
+
+lxc.network.type      = vlan
+lxc.network.flags     = up
+lxc.network.link      = $IF_VLANPHY
+lxc.network.vlan.id   = $(( 16#${IF_VLANTAG} ))
+$( [ "$IF_NAME" ] && echo "lxc.network.name      = $IF_NAME" )
+$( [ "$IF_IPV4" ] && echo "lxc.network.ipv4      = $IF_IPV4" )
+$( [ "$IF_IPV6" ] && echo "lxc.network.ipv6      = $IF_IPV6" )
+EOF
+	    fi
+	fi
+	    
+    done
+}
+
+
+
+
+loop_bridge_ifnames() {
+    local OPT_CMD=$1
+    local IFPATTERN=${2:-$LXC_VNET_PREFIX}
+    local CMD_RESET=$( echo "$OPT_CMD" | grep -e "reset" > /dev/null && echo "reset," || echo "" )
+    local CMD_ISFREE=$( echo "$OPT_CMD" | grep -e "isfree" > /dev/null && echo "isfree," || echo "" )
+
+    for IFSECTION in $( uci_show network | grep "type=bridge" | awk -F'.' '{print $2}' ); do
+
+	local IFNAMES=$( uci_get network.$IFSECTION.ifname soft,quiet )
+
+	for IFNAME in $IFNAMES; do
+
+	    if echo $IFNAME | grep -e "^$IFPATTERN" >/dev/null; then
+
+		if [ $CMD_RESET ]; then	    
+		    uci_set network.$IFSECTION.ifname=$IFNAME del
+
+		elif [ $CMD_ISFREE ]; then
+		    return 1
+		else
+		    err $FUNCNAME "Invalid command"
+		fi
+	    fi
+	done
+    done
+}
+
+
+lxc_stop() {
+    local SL_NAME=$( lxc_name "$1" )
+
+    lxc_check
+
+    lxc-stop -n $SL_NAME
+
+    local IF_KEYS="$( uci_get lxc.general.lxc_if_keys )"
+    local IF_KEY=
+    for IF_KEY in $IF_KEYS; do
+	
+	local IF_TYPE=$( uci_get lxc.$SL_NAME.if${IF_KEY}_type soft,quiet 2>/dev/null )
+	
+	if [ $IF_TYPE ]; then
+	    
+	    local IF_NAME=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_name    soft,quiet 2>/dev/null )
+	    local IF_NETCONF=$( uci_get lxc.$SL_NAME.if${IF_KEY}_netconf soft,quiet 2>/dev/null )
+	    local IF_PAIR=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_pair    soft,quiet 2>/dev/null)
+	    
+	    if [ "$IF_TYPE" = "veth" ]; then
+		if [ ${IF_NETCONF:-} ] && [ "$(uci_get network.$IF_NETCONF.type soft)" = "bridge" ] && [ ${IF_PAIR} ]; then
+		    uci_set network.$IF_NETCONF.ifname=$IF_PAIR del
+		fi
+	    fi
+	fi
+    done
+    /etc/init.d/network reload
+}
+
+
+lxc_cleanup_dev() {
+    local SL_NAME=$( lxc_name "$1" )
+
+    err $FUNCNAME "Failed starting container $SL_NAME" soft
+
+    local DEV=
+    for DEV in $( grep "lxc.network.veth.pair" $LXC_IMAGES_PATH/$SL_NAME/config | awk -F'=' '{print $2}' ); do 
+	if [ "$DEV" ]; then
+	    if ip link show dev $DEV > /dev/null 2>&1 ; then 
+		echo "$0: cleaning up $DEV" >&2
+		ip link del dev $DEV
+	    fi
+	fi
+    done
+
+    local VLANID=
+    for VLANID in $( grep "lxc.network.vlan.id" $LXC_IMAGES_PATH/$SL_NAME/config | awk -F'=' '{print $2}' | sed s/" "// ); do 
+	if [ "$VLANID" ]; then
+
+	    local VLAN=$( ip link show | grep -e "vlan$VLANID" | awk -F':' {'print $2}' | sed s/" "// | awk -F'@' {'print $1'} )
+
+	    if [ $VLAN ] ; then 
+		echo "$0: cleaning up $VLAN" >&2
+		ip link del dev $VLAN
+	    fi
+	fi
+    done
+
+}
+
+lxc_start() {
+    local SL_NAME=$( lxc_name "$1" )
+
+    lxc_check
+
+    if lxc-info -n $SL_NAME 2>/dev/null | grep -e "^state:" | grep -e "RUNNING" >/dev/null ;then
+
+	err $FUNCNAME "Container $SL_NAME already running" soft
+
+    elif [ "$( uci_get lxc.$SL_NAME soft,quiet )" = "container" ]; then
+
+	if ! [ -d $LXC_IMAGES_PATH/$SL_NAME ] && [ "$( uci_get lxc.$SL_NAME.auto_create soft,quiet )" = "1" ]; then
+	    lxc_create $SL_NAME lxc.$SL_NAME
+	fi
+
+
+	lxc-start -n $SL_NAME -d 
+	sleep 1
+
+	if ! lxc-info -n $SL_NAME 2>/dev/null | grep -e "^state:" | grep -e "RUNNING" >/dev/null ; then
+	    lxc_cleanup_dev $SL_NAME
+	    lxc_stop $SL_NAME
+	    sleep 1
+	    err $FUNCNAME "FIXME: Failed starting $SL_NAME! Retrying..." soft
+	    lxc-start -n $SL_NAME -d 
+	    sleep 1
+	fi
+	
+	if lxc-info -n $SL_NAME 2>/dev/null | grep -e "^state:" | grep -e "RUNNING" >/dev/null ; then
+	    
+
+	    local IF_KEYS="$( uci_get lxc.general.lxc_if_keys )"
+	    local IF_KEY=
+
+	    for IF_KEY in $IF_KEYS; do
+		
+		local IF_TYPE=$( uci_get lxc.$SL_NAME.if${IF_KEY}_type soft,quiet 2>/dev/null )
+
+		if [ $IF_TYPE ]; then
+
+		    local IF_NAME=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_name    soft,quiet 2>/dev/null )
+		    local IF_NETCONF=$( uci_get lxc.$SL_NAME.if${IF_KEY}_netconf soft,quiet 2>/dev/null )
+		    local IF_PAIR=$(    uci_get lxc.$SL_NAME.if${IF_KEY}_pair    soft,quiet 2>/dev/null )
+
+		    if [ "$IF_TYPE" = "veth" ]; then
+			
+			if [ "${IF_NETCONF:-}" ] && [ "$(uci_get network.$IF_NETCONF.type soft)" = "bridge" ] && [ "${IF_PAIR}" ]; then
+			
+			    uci_set network.$IF_NETCONF.ifname=$IF_PAIR del
+
+			    loop_bridge_ifnames isfree $IF_PAIR || \
+				{ lxc_stop $SL_NAME; err $FUNCNAME "interface pair $IF_PAIR already used in network config";}
+
+			    uci_set network.$IF_NETCONF.ifname=$IF_PAIR add
+			fi
+
+		    fi
+		    
+		fi
+		
+	    done
+	    /etc/init.d/network reload
+
+	else
+	    lxc_cleanup_dev $SL_NAME
+
+	fi
+    fi
+}
+
+
+
+help() {
+
+cat <<EOF
+help 
+lxc_create <id_name> <template or config.id_name>  # eg:$ lxc_create 01_hello lxc.default
+                                                   # templates: lxc.default, lxc.openwrt, lxc.debian
+lxc_start  <id_name>
+lxc_stop   <id_name>
+lxc_remove <id_name>
+lxc_purge  <id_name>
+EOF
+
+}
+
+
+
+
+
+CMD=$( echo $0 | awk -F'/' '{print $(NF)}' )
+
+if [ "$CMD" = "lxc.lib" ]; then
+
+    if [ "${1:-}" ]; then
+	"$@"
+    else
+	help
+    fi
+
+else
+
+    case "$CMD" in
+	help) $CMD;;
+	lxc_create) $CMD $1 $2;;
+	lxc_start|lxc_stop|lxc_remove|lxc_purge) $CMD $1;;
+	*) help;;
+    esac
+
+fi

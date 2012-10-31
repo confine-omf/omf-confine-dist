@@ -83,14 +83,15 @@ define kmenuconfig_owrt
 endef
 
 define update_workspace
-	git pull origin $(CONFINE_VERSION) && git checkout $(CONFINE_VERSION)
+	git checkout $(CONFINE_VERSION) && git pull origin $(CONFINE_VERSION)
 	(cd "$(BUILD_DIR)" && git pull && git checkout $(CONFINE_VERSION))
 	(cd "$(OWRT_PKG_DIR)" && git pull && git checkout $(CONFINE_VERSION))
 endef
 
 define build_src
-	make -C "$(BUILD_DIR)" $(MAKE_SRC)
+	make -C "$(BUILD_DIR)" $(MAKE_SRC) BRANCH_GIT=$(shell git branch|grep ^*|cut -d " " -f 2) REV_GIT=$(shell git --no-pager log -n 1 --oneline|cut -d " " -f 1)
 endef
+
 
 define post_build
 	mkdir -p "$(IMAGES)"
@@ -168,6 +169,12 @@ dirclean:
 distclean:
 	make -C "$(BUILD_DIR)" distclean
 	$(call copy_config)
+
+mrproper:
+	rm -rf "$(BUILD_DIR)" || true
+	rm -rf "$(OWRT_PKG_DIR)" || true
+	rm -rf "$(DOWNLOAD_DIR)" || true
+	rm -f .prepare || true
 
 help:
 	@cat README

@@ -1,4 +1,4 @@
 #!/bin/sh
 echo "Disabling firewall..."
-/etc/init.d/firewall disable
+chmod 000 /etc/init.d/firewall 
 
