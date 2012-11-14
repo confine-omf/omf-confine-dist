@@ -8,10 +8,15 @@ CONFIG_B43_FW_SQUASH=y
 CONFIG_B43_FW_SQUASH_COREREVS="5,6,7,8,9,10,11,13,14,15,16"
 CONFIG_B43_FW_SQUASH_PHYTYPES="G,LP,N"
 CONFIG_BUSYBOX_CONFIG_BLOCKDEV=y
+<<<<<<< HEAD
 CONFIG_BUSYBOX_CONFIG_DEFAULT_DEPMOD_FILE="modules.dep"
 CONFIG_BUSYBOX_CONFIG_FEATURE_GETOPT_LONG=y
 CONFIG_BUSYBOX_CONFIG_GETOPT=y
 CONFIG_BUSYBOX_CONFIG_MODPROBE=y
+=======
+CONFIG_BUSYBOX_CONFIG_FEATURE_GETOPT_LONG=y
+CONFIG_BUSYBOX_CONFIG_GETOPT=y
+>>>>>>> confine/master
 # CONFIG_BUSYBOX_CONFIG_NTPD is not set
 CONFIG_BUSYBOX_CONFIG_RDATE=y
 CONFIG_BUSYBOX_CONFIG_SCRIPT=y
@@ -65,18 +70,35 @@ CONFIG_PACKAGE_6to4=y
 CONFIG_PACKAGE_B43_PHY_N=y
 CONFIG_PACKAGE_MAC80211_DEBUGFS=y
 CONFIG_PACKAGE_MAC80211_MESH=y
+<<<<<<< HEAD
 CONFIG_PACKAGE_bash=y
 CONFIG_PACKAGE_bash-completion=y
+CONFIG_PACKAGE_bc=y
 CONFIG_PACKAGE_binutils=y
 CONFIG_PACKAGE_bridge=y
 CONFIG_PACKAGE_bwm=y
 CONFIG_PACKAGE_bzip2=y
+=======
+CONFIG_PACKAGE_airview=y
+CONFIG_PACKAGE_bash=y
+CONFIG_PACKAGE_bash-completion=y
+CONFIG_PACKAGE_binutils=y
+CONFIG_PACKAGE_bridge=y
+CONFIG_PACKAGE_broadcastflood=y
+CONFIG_PACKAGE_bwm=y
+CONFIG_PACKAGE_bzip2=y
+CONFIG_PACKAGE_confine-system=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_coreutils=y
 CONFIG_PACKAGE_coreutils-chroot=y
 CONFIG_PACKAGE_coreutils-rm=y
 CONFIG_PACKAGE_coreutils-sha1sum=y
 CONFIG_PACKAGE_crda=y
 CONFIG_PACKAGE_debootstrap=y
+<<<<<<< HEAD
+CONFIG_PACKAGE_diffutils=y
+=======
+>>>>>>> confine/master
 CONFIG_PACKAGE_dropbearconvert=y
 CONFIG_PACKAGE_e2fsprogs=y
 CONFIG_PACKAGE_ethtool=y
@@ -84,7 +106,10 @@ CONFIG_PACKAGE_fdisk=y
 CONFIG_PACKAGE_file=y
 CONFIG_PACKAGE_fping=y
 CONFIG_PACKAGE_glib2=y
+<<<<<<< HEAD
 CONFIG_PACKAGE_gpsd=y
+=======
+>>>>>>> confine/master
 CONFIG_PACKAGE_gzip=y
 CONFIG_PACKAGE_hostapd=y
 CONFIG_PACKAGE_hostapd-utils=y
@@ -169,6 +194,10 @@ CONFIG_PACKAGE_kmod-macvlan=y
 CONFIG_PACKAGE_kmod-misdn=y
 CONFIG_PACKAGE_kmod-mmc=y
 CONFIG_PACKAGE_kmod-nls-base=y
+<<<<<<< HEAD
+=======
+CONFIG_PACKAGE_kmod-openvswitch=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_kmod-p54-common=y
 CONFIG_PACKAGE_kmod-p54-usb=y
 CONFIG_PACKAGE_kmod-rfkill=y
@@ -180,7 +209,10 @@ CONFIG_PACKAGE_kmod-rt2x00-pci=y
 CONFIG_PACKAGE_kmod-rt2x00-usb=y
 CONFIG_PACKAGE_kmod-rt73-usb=y
 CONFIG_PACKAGE_kmod-sched=y
+<<<<<<< HEAD
+=======
 CONFIG_PACKAGE_kmod-sched-core=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_kmod-scsi-core=y
 CONFIG_PACKAGE_kmod-siit=y
 CONFIG_PACKAGE_kmod-sis190=y
@@ -212,7 +244,13 @@ CONFIG_PACKAGE_kmod-usb-net-pegasus=y
 CONFIG_PACKAGE_kmod-usb-net-rndis=y
 CONFIG_PACKAGE_kmod-usb-net-sierrawireless=y
 CONFIG_PACKAGE_kmod-usb-ohci=y
+<<<<<<< HEAD
+CONFIG_PACKAGE_kmod-usb-phidget=y
 CONFIG_PACKAGE_kmod-usb-serial=y
+CONFIG_PACKAGE_kmod-usb-serial-airprime=y
+=======
+CONFIG_PACKAGE_kmod-usb-serial=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_kmod-usb-serial-ark3116=y
 CONFIG_PACKAGE_kmod-usb-serial-belkin=y
 CONFIG_PACKAGE_kmod-usb-serial-ch341=y
@@ -241,32 +279,37 @@ CONFIG_PACKAGE_ldconfig=y
 CONFIG_PACKAGE_ldd=y
 CONFIG_PACKAGE_less=y
 CONFIG_PACKAGE_libblkid=y
+<<<<<<< HEAD
+CONFIG_PACKAGE_libblobmsg-json=y
 CONFIG_PACKAGE_libbsd=y
 CONFIG_PACKAGE_libbz2=y
-CONFIG_PACKAGE_libcap=y
+=======
+CONFIG_PACKAGE_libbsd=y
+CONFIG_PACKAGE_libbz2=y
+CONFIG_PACKAGE_libcap2=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_libcom_err=y
-CONFIG_PACKAGE_libcyassl=y
-CONFIG_PACKAGE_libdb47=y
 CONFIG_PACKAGE_libelf=y
 CONFIG_PACKAGE_libext2fs=y
 CONFIG_PACKAGE_libffi=y
-CONFIG_PACKAGE_libgps=y
-CONFIG_PACKAGE_libgpsd=y
 CONFIG_PACKAGE_libip6tc=y
-CONFIG_PACKAGE_libiwinfo=y
-CONFIG_PACKAGE_libiwinfo-lua=y
+<<<<<<< HEAD
+CONFIG_PACKAGE_libjson=y
+=======
+>>>>>>> confine/master
 CONFIG_PACKAGE_liblua=y
 CONFIG_PACKAGE_liblzo=y
 CONFIG_PACKAGE_libmagic=y
 CONFIG_PACKAGE_libncurses=y
 CONFIG_PACKAGE_libnetsnmp=y
+<<<<<<< HEAD
+CONFIG_PACKAGE_libnl-tiny=y
 CONFIG_PACKAGE_liboml2=y
 CONFIG_PACKAGE_libopenssl=y
 CONFIG_PACKAGE_libpcap=y
 CONFIG_PACKAGE_libpopt=y
 CONFIG_PACKAGE_libpthread=y
 CONFIG_PACKAGE_libreadline=y
-CONFIG_PACKAGE_librpc=y
 CONFIG_PACKAGE_librt=y
 CONFIG_PACKAGE_libruby=y
 CONFIG_PACKAGE_libsensors=y
@@ -274,12 +317,27 @@ CONFIG_PACKAGE_libsigar=y
 CONFIG_PACKAGE_libsqlite3=y
 CONFIG_PACKAGE_libstdcpp=y
 CONFIG_PACKAGE_libsysfs=y
-CONFIG_PACKAGE_libubus-lua=y
-CONFIG_PACKAGE_libuci-lua=y
+CONFIG_PACKAGE_libubox=y
+CONFIG_PACKAGE_libubus=y
 CONFIG_PACKAGE_libusb-1.0=y
 CONFIG_PACKAGE_libuuid=y
 CONFIG_PACKAGE_libwrap=y
 CONFIG_PACKAGE_libxml2=y
+=======
+CONFIG_PACKAGE_libopenssl=y
+CONFIG_PACKAGE_libpcap=y
+CONFIG_PACKAGE_libpthread=y
+CONFIG_PACKAGE_libreadline=y
+CONFIG_PACKAGE_librpc=y
+CONFIG_PACKAGE_librt=y
+CONFIG_PACKAGE_libruby=y
+CONFIG_PACKAGE_libsensors=y
+CONFIG_PACKAGE_libstdcpp=y
+CONFIG_PACKAGE_libsysfs=y
+CONFIG_PACKAGE_libusb-1.0=y
+CONFIG_PACKAGE_libuuid=y
+CONFIG_PACKAGE_libwrap=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_lm-sensors=y
 CONFIG_PACKAGE_lm-sensors-detect=y
 CONFIG_PACKAGE_losetup=y
@@ -289,27 +347,7 @@ CONFIG_PACKAGE_luac=y
 CONFIG_PACKAGE_luafilesystem=y
 CONFIG_PACKAGE_luaposix=y
 CONFIG_PACKAGE_luasocket=y
-CONFIG_PACKAGE_luci=y
-CONFIG_PACKAGE_luci-app-diag-core=y
-CONFIG_PACKAGE_luci-app-firewall=y
-CONFIG_PACKAGE_luci-i18n-english=y
-CONFIG_PACKAGE_luci-lib-core=y
-CONFIG_PACKAGE_luci-lib-ipkg=y
-CONFIG_PACKAGE_luci-lib-json=y
-CONFIG_PACKAGE_luci-lib-lmo=y
-CONFIG_PACKAGE_luci-lib-nixio=y
-CONFIG_PACKAGE_luci-lib-sys=y
-CONFIG_PACKAGE_luci-lib-web=y
-CONFIG_PACKAGE_luci-mod-admin-core=y
-CONFIG_PACKAGE_luci-mod-admin-full=y
-CONFIG_PACKAGE_luci-mod-rpc=y
-CONFIG_PACKAGE_luci-proto-core=y
-CONFIG_PACKAGE_luci-proto-ppp=y
-CONFIG_PACKAGE_luci-sgi-cgi=y
-CONFIG_PACKAGE_luci-sgi-uhttpd=y
-CONFIG_PACKAGE_luci-ssl=y
-CONFIG_PACKAGE_luci-theme-base=y
-CONFIG_PACKAGE_luci-theme-openwrt=y
+<<<<<<< HEAD
 CONFIG_PACKAGE_mtr=y
 CONFIG_PACKAGE_nano=y
 CONFIG_PACKAGE_net-tools-hostname=y
@@ -323,6 +361,17 @@ CONFIG_PACKAGE_oml2-apps=y
 CONFIG_PACKAGE_oml2-bench=y
 CONFIG_PACKAGE_openssh-keygen=y
 CONFIG_PACKAGE_openssl-util=y
+=======
+CONFIG_PACKAGE_lxc=y
+CONFIG_PACKAGE_mtr=y
+CONFIG_PACKAGE_nano=y
+CONFIG_PACKAGE_netcat=y
+CONFIG_PACKAGE_netperf=y
+CONFIG_PACKAGE_objdump=y
+CONFIG_PACKAGE_openssh-keygen=y
+CONFIG_PACKAGE_openssl-util=y
+CONFIG_PACKAGE_openvswitch=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_patch=y
 CONFIG_PACKAGE_pciutils=y
 CONFIG_PACKAGE_perl=y
@@ -337,18 +386,23 @@ CONFIG_PACKAGE_perlbase-sys=y
 CONFIG_PACKAGE_perlbase-xsloader=y
 # CONFIG_PACKAGE_ppp is not set
 CONFIG_PACKAGE_pv=y
-CONFIG_PACKAGE_px5g=y
 CONFIG_PACKAGE_python=y
 CONFIG_PACKAGE_python-mini=y
 CONFIG_PACKAGE_radvd=y
 CONFIG_PACKAGE_ruby=y
 CONFIG_PACKAGE_ruby-core=y
 CONFIG_PACKAGE_ruby-dl=y
+<<<<<<< HEAD
 CONFIG_PACKAGE_ruby-enc=y
 CONFIG_PACKAGE_ruby-erb=y
 CONFIG_PACKAGE_ruby-gems=y
 CONFIG_PACKAGE_ruby-irb=y
 CONFIG_PACKAGE_ruby-log4r=y
+=======
+CONFIG_PACKAGE_ruby-erb=y
+CONFIG_PACKAGE_ruby-gems=y
+CONFIG_PACKAGE_ruby-irb=y
+>>>>>>> confine/master
 CONFIG_PACKAGE_ruby-openssl=y
 CONFIG_PACKAGE_ruby-rake=y
 CONFIG_PACKAGE_ruby-readline=y
@@ -358,6 +412,10 @@ CONFIG_PACKAGE_ruby-xmlrpc=y
 CONFIG_PACKAGE_ruby-yaml=y
 CONFIG_PACKAGE_ruby-zlib=y
 CONFIG_PACKAGE_screen=y
+<<<<<<< HEAD
+CONFIG_PACKAGE_script=y
+=======
+>>>>>>> confine/master
 CONFIG_PACKAGE_snmp-utils=y
 CONFIG_PACKAGE_snmpd=y
 CONFIG_PACKAGE_sysfsutils=y
@@ -367,11 +425,12 @@ CONFIG_PACKAGE_tcpdump=y
 CONFIG_PACKAGE_terminfo=y
 CONFIG_PACKAGE_time=y
 CONFIG_PACKAGE_tinc=y
+<<<<<<< HEAD
+CONFIG_PACKAGE_ubus=y
+CONFIG_PACKAGE_ubusd=y
+=======
+>>>>>>> confine/master
 CONFIG_PACKAGE_udev=y
-CONFIG_PACKAGE_uhttpd=y
-CONFIG_PACKAGE_uhttpd-mod-lua=y
-CONFIG_PACKAGE_uhttpd-mod-tls=y
-CONFIG_PACKAGE_uhttpd-mod-tls_cyassl=y
 CONFIG_PACKAGE_usbip=y
 CONFIG_PACKAGE_usbip-client=y
 CONFIG_PACKAGE_usbip-server=y
@@ -379,21 +438,31 @@ CONFIG_PACKAGE_usbutils=y
 CONFIG_PACKAGE_veth=y
 CONFIG_PACKAGE_vim=y
 CONFIG_PACKAGE_vim-full=y
+<<<<<<< HEAD
 CONFIG_PACKAGE_wget=y
+=======
+>>>>>>> confine/master
 CONFIG_PACKAGE_wide-dhcpv6-client=y
 CONFIG_PACKAGE_wide-dhcpv6-control=y
 CONFIG_PACKAGE_wide-dhcpv6-server=y
 CONFIG_PACKAGE_wireless-tools=y
 CONFIG_PACKAGE_wpa-supplicant=y
 CONFIG_PACKAGE_wpad=y
+<<<<<<< HEAD
 CONFIG_PACKAGE_xmpp4r=y
 CONFIG_PACKAGE_zlib=y
 CONFIG_PACKAGE_zoneinfo-europe=y
 CONFIG_STRIP_ARGS="--strip-all"
+# CONFIG_TARGET_ROOTFS_EXT4FS is not set
 # CONFIG_TARGET_ROOTFS_JFFS2 is not set
-CONFIG_TARGET_ROOTFS_MAXINODE=60000
-CONFIG_TARGET_ROOTFS_PARTSIZE=512
 # CONFIG_TARGET_ROOTFS_SQUASHFS is not set
+=======
+CONFIG_PACKAGE_zlib=y
+CONFIG_PACKAGE_zoneinfo-europe=y
+CONFIG_STRIP_ARGS="--strip-all"
+CONFIG_TARGET_ROOTFS_MAXINODE=60000
+CONFIG_TARGET_ROOTFS_PARTSIZE=256
+>>>>>>> confine/master
 CONFIG_TARGET_SUFFIX="gnu"
 CONFIG_UDEV_EXTRA_accelerometer=y
 CONFIG_UDEV_EXTRA_ata_id=y
@@ -407,17 +476,30 @@ CONFIG_UDEV_EXTRA_scsi_id=y
 CONFIG_UDEV_EXTRA_usb_id=y
 CONFIG_UDEV_EXTRA_v4l_id=y
 CONFIG_USE_EGLIBC=y
+<<<<<<< HEAD
+# CONFIG_USE_SSTRIP is not set
+CONFIG_USE_STRIP=y
+# CONFIG_USE_UCLIBC is not set
+CONFIG_WPA_SUPPLICANT_INTERNAL=y
+CONFIG_PACKAGE_grub=y
+=======
 CONFIG_USE_LIBSTDCXX=y
 # CONFIG_USE_SSTRIP is not set
 CONFIG_USE_STRIP=y
 # CONFIG_USE_UCLIBC is not set
 # CONFIG_USE_UCLIBCXX is not set
 CONFIG_WPA_SUPPLICANT_INTERNAL=y
+CONFIG_X86_VDI_IMAGES=y
+CONFIG_X86_VMDK_IMAGES=y
+>>>>>>> confine/master
 # CONFIG_PACKAGE_kmod-mppe is not set
 CONFIG_PACKAGE_kmod-ppp=y
 # CONFIG_PACKAGE_kmod-ppp-synctty is not set
 # CONFIG_PACKAGE_kmod-pppoa is not set
 CONFIG_PACKAGE_kmod-pppoe=y
 # CONFIG_PACKAGE_kmod-pppol2tp is not set
+<<<<<<< HEAD
+=======
 CONFIG_PACKAGE_kmod-pppox=y
+>>>>>>> confine/master
 # CONFIG_PACKAGE_kmod-pptp is not set

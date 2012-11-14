@@ -36,11 +36,14 @@ DOWNLOAD_DIR = dl
 CONFIG = $(BUILD_DIR)/.config
 KCONFIG = $(BUILD_DIR)/target/linux/x86/config-3.3
 IMAGES = images
-NIGHTLY_IMAGES_DIR ?= /opt/data/www/images
+NIGHTLY_IMAGES_DIR ?= www
 TARGET = openwrt-x86-generic
 IMAGE = openwrt-x86-generic-combined
 IMAGE_TYPE ?= ext4
+<<<<<<< HEAD
 IMAGE_TYPE ?= ext4
+=======
+>>>>>>> confine/testing
 J ?= 1
 V ?= 0
 MAKE_SRC = -j$(J) V=$(V)
